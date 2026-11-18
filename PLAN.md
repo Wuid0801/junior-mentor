@@ -33,7 +33,7 @@
 | D8 | 코드 출처 | mentor 코드·문구를 쓰지 않고 처음부터 작성. 구조와 디자인도 새로 |
 | D9 | 단일 세션 모드 | 넣지 않는다 (요구사항 아님) |
 | D10 | 라이선스 | 사용자가 원격 저장소를 만들 때 정한다. 그전까지 LICENSE 파일 없음. README에 "아이디어 참고: smixs/mentor" 한 줄 |
-| D11 | git | 원격 연결 없는 로컬 저장소만. 원격 추가·push는 사용자가 한다 |
+| D11 | git | 원격 `origin` = github.com/Wuid0801/junior-mentor (사용자 요청으로 연결). push는 사용자 확인 후에만 |
 | D12 | 집계 제외 | MCP 도구(이름 `mcp__…`: 브라우저·앱·작업 도구) 오류, 에이전트 내부 오류(`<tool_use_error>`, `[Request interrupted`, `[Tool call interrupted`), 사용자가 도구 실행을 거절한 경우("The user doesn't want to proceed")는 오류 집계에서 뺀다 |
 
 위 두 표에 없는 내용은 **제안**이다.
