@@ -31,6 +31,6 @@
     "no_problems": "No recurring problems in this period.",
     "low_data": "Not enough data yet",
     "low_data_text": "This period has fewer than 5 sessions, so only the numbers are shown. Try a longer period.",
-    "foot": "junior-mentor · {time} · {sessions} sessions · {lines} log lines could not be read · Parts of this report were written by an AI model; read them as hypotheses. Keys, tokens, emails and home paths were masked before analysis."
+    "foot": "junior-mentor · {time} · {sessions} sessions · unreadable log lines {lines}, files {files} ·Parts of this report were written by an AI model; read them as hypotheses. Keys, tokens, emails and home paths were masked before analysis."
   }
 }

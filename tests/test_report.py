@@ -46,6 +46,18 @@ class RenderTest(TempDirCase):
         out = rr.render(STATS, {"sections": {"problems": ["문제 하나"], "patterns": ["x"]}}, "ko-KR")
         self.assertIn('<html lang="ko">', out)
         self.assertIn("문제 하나", out)
+        self.assertIn('<html lang="ko">', rr.render(STATS, {}, "ko_KR"))
+        out = rr.render(STATS, {"sections": {"problems": [{"problem": "p", "concept": "컨텍스트 윈도"}]}}, "ko")
+        self.assertIn("컨텍스트 윈도", out)  # a concept given as a plain string still shows
+
+    def test_day_chart_keeps_inactive_days(self):
+        out = rr.render(dict(STATS, per_day={"2026-11-15": 2, "2026-11-18": 4}), ANALYSIS, "en")
+        self.assertEqual(out.count('<i style="height:'), 4)  # 15, 16, 17, 18
+        self.assertIn('height:0%', out)
+
+    def test_footer_counts_unreadable_files(self):
+        out = rr.render(dict(STATS, unreadable={"lines": 2, "files": 1}), {}, "en")
+        self.assertIn("unreadable log lines 2, files 1", out)
 
     def test_main_reads_analysis_with_bom(self):
         stats, analysis, report = self.dir / "s.json", self.dir / "a.json", self.dir / "r.html"

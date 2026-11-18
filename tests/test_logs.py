@@ -35,7 +35,8 @@ class MaskTest(unittest.TestCase):
 
     def test_keeps_ordinary_text(self):
         for text in ("src/app/users/page.tsx", r"C:\proj\users\models.py", "GET /api/users/123",
-                     "GET /users/123 에러", "fetch('/users/1')",
+                     "GET /users/123 에러", "fetch('/users/1')", "GET /home/feed 에러",
+                     "logo@2x.png", "icon@3x.svg",
                      "task-management-system", "npm i react@18.3.1", "token: 만료되면 다시 로그인",
                      "test_user_profile_settings_panel_renders_v2_correctly",
                      "src/components/UserProfileSettingsPanel.tsx", "로그인 버그 고쳐줘"):
@@ -77,6 +78,11 @@ class ErrorTest(unittest.TestCase):
         self.assertEqual(logs.codex_error_text({"exit_code": 2, "output": "bad"}), "bad")
         self.assertIsNone(logs.codex_error_text({"exit_code": 0}))
         self.assertIsNone(logs.codex_error_text([{"type": "input_text"}]))
+        # exec tool: a list of items whose text is the JSON result
+        self.assertEqual(logs.codex_error_text([{"type": "input_text", "text": json.dumps(
+            {"output": "boom", "metadata": {"exit_code": 1}})}]), "boom")
+        self.assertIsNone(logs.codex_error_text([{"type": "input_text", "text": json.dumps(
+            {"output": "ok", "metadata": {"exit_code": 0}})}]))
 
 
 class PromptTest(unittest.TestCase):
@@ -131,6 +137,7 @@ class ClaudeSessionTest(TempDirCase):
             call("t3", "mcp__browser__click"),
             failed("t3", "screenshot failed"),
             failed("t1", "[Tool call interrupted: the session ended]"),
+            failed("t1", "The user doesn't want to proceed with this tool use. The tool use was rejected."),
             *[call(f"e{i}", "Edit", file_path=target) for i in range(4)],
             call("t4", "Read", usage={"output_tokens": 5}),  # no message id: counted
             call("t5", "Read", usage={"output_tokens": 5}),

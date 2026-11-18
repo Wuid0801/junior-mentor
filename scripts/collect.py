@@ -78,7 +78,7 @@ def collect(agent, days, files=None):
             "prompts": len(s.prompts), "first_prompt": s.prompts[0][:EXCERPT] if s.prompts else "",
             "corrections": [c[:EXCERPT] for c in s.corrections[:2]], "correction_count": len(s.corrections),
             "errors": n_errors, "interrupts": s.interrupts, "out_tokens": s.out_tokens,
-            "top_tools": dict(s.tools.most_common(5)),
+            "in_tokens": s.in_tokens, "top_tools": dict(s.tools.most_common(5)),
         })
     totals["files"] = len(touched)
     return {
@@ -149,7 +149,7 @@ def digest(st):
     for i, r in enumerate(ranked[:DIGEST_SESSIONS], 1):
         out.append(f"{i}. [{r['source']}] {r['date']} {r['cwd']} — {r['prompts']} prompts, "
                    f"{r['errors']} errors, {r['correction_count']} corrections, {r['interrupts']} interrupts, "
-                   f"{r['out_tokens']:,} out tokens")
+                   f"{r['out_tokens']:,} out / {r.get('in_tokens', 0):,} in tokens")
         out.append(f"   first: “{_oneline(r['first_prompt'])}”")
         out += [f"   correction: “{_oneline(c)}”" for c in r["corrections"]]
     if len(ranked) > DIGEST_SESSIONS:

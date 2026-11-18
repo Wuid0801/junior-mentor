@@ -7,7 +7,9 @@ No JavaScript and no external resources: the file opens the same offline in any 
 """
 import argparse
 import json
+import re
 import sys
+from datetime import date, timedelta
 from html import escape
 from pathlib import Path
 
@@ -66,8 +68,8 @@ footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line)}
 
 
 def lang_code(lang):
-    """'ko-KR' -> 'ko'; anything that is not plain letters -> 'en' (it ends up in <html lang> and a path)."""
-    code = str(lang or "").split("-")[0].lower()
+    """'ko-KR' / 'ko_KR' -> 'ko'; anything that is not plain letters -> 'en' (it ends up in <html lang> and a path)."""
+    code = re.split(r"[-_]", str(lang or ""))[0].lower()
     return code if code.isalpha() else "en"
 
 
@@ -107,12 +109,26 @@ def tiles(st, L):
             + "</section>")
 
 
+def _calendar(per_day):
+    """Every date from the first to the last active day, quiet days as 0, so gaps stay visible."""
+    counts = {}
+    for d, n in as_dict(per_day).items():
+        try:
+            counts[date.fromisoformat(d)] = n
+        except (TypeError, ValueError):
+            continue  # "?" or junk
+    if not counts:
+        return []
+    first, last = min(counts), max(counts)
+    return [(first + timedelta(i), counts.get(first + timedelta(i), 0)) for i in range((last - first).days + 1)]
+
+
 def day_bars(per_day, L):
-    days = [(d, n) for d, n in as_dict(per_day).items() if d != "?"]
+    days = [(d.isoformat(), n) for d, n in _calendar(per_day)]
     if not days:
         return ""
     top = max(n for _, n in days) or 1
-    bars = "".join(f'<i style="height:{max(4, round(n / top * 100))}%" title="{e(d)} · {num(n)}"></i>'
+    bars = "".join(f'<i style="height:{max(4, round(n / top * 100)) if n else 0}%" title="{e(d)} · {num(n)}"></i>'
                    for d, n in days)
     return (f'<section><h2>{e(L["by_day"])}</h2><div class="days">{bars}</div>'
             f'<p class="axis"><span>{e(days[0][0])}</span><span>{e(days[-1][0])}</span></p></section>')
@@ -158,7 +174,8 @@ def problem_cards(items, L):
         parts = [f'<h3>{e(p.get("problem"))}</h3>']
         parts += [f'<p class="{key}"><b>{e(L[key])}</b> {e(p[key])}</p>'
                   for key in ("evidence", "why", "fix") if p.get(key)]
-        concept = as_dict(p.get("concept"))
+        concept = p.get("concept")
+        concept = {"name": concept} if isinstance(concept, str) else as_dict(concept)
         if concept.get("name"):
             parts.append(f'<p class="concept"><b>{e(L["concept"])} · {e(concept["name"])}</b> '
                          f'{e(concept.get("explain"))}</p>')
@@ -197,8 +214,9 @@ def render(st, an, lang):
     else:
         body += [f'<section class="summary"><h2>{e(L["low_data"])}</h2><p>{e(L["low_data_text"])}</p></section>',
                  day_bars(st.get("per_day"), L)]
+    unreadable = as_dict(st.get("unreadable"))
     foot = L["foot"].format(time=st.get("generated", "?"), sessions=totals.get("sessions", 0),
-                            lines=as_dict(st.get("unreadable")).get("lines", 0))
+                            lines=unreadable.get("lines", 0), files=unreadable.get("files", 0))
     body.append(f"<footer>{e(foot)}</footer>")
     return (f'<!doctype html>\n<html lang="{code}">\n<head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">'

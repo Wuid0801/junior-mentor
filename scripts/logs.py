@@ -53,14 +53,17 @@ MASKS = [
     (re.compile(r"([A-Za-z0-9_-]*(?:password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key"
                 r"|private[_-]?key)[A-Za-z0-9_-]*)([\"']?\s*[:=]\s*)(\"[^\"]*\"|'[^']*'|[!-+\--:<-~]+)", re.I),
      r"\1\2[SECRET]"),
-    # letters-only top-level domain, so react@18.3.1 is not an email
-    (re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}(?![A-Za-z0-9-])"), "[EMAIL]"),
+    # letters-only top-level domain that is not a file extension: react@18.3.1 and logo@2x.png stay
+    (re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*"
+                r"\.(?!(?:png|jpe?g|gif|svg|webp|ico|bmp|js|mjs|cjs|ts|tsx|jsx|css|scss|json|md|html?|py|txt|map)"
+                r"(?![A-Za-z0-9-]))[A-Za-z]{2,}(?![A-Za-z0-9-])"), "[EMAIL]"),
     # A home dir only where a path starts, so src/app/users/ and "GET /users/1" stay.
     # Windows needs a drive (C:\Users\x, escaped C:\\Users\\x, git-bash /c/Users/x);
-    # macOS /Users and Linux /home are case-sensitive. ("/home/feed" as a web route is masked too.)
+    # macOS /Users and Linux /home are case-sensitive; /home/<name> only with a deeper path after it,
+    # so a web route like "/home/feed" stays (this machine's own home is replaced exactly anyway).
     (re.compile(r"(?<![^\s'\"`(=\[,:])(?:[A-Za-z]:|/[a-z](?=/))[\\/]+[Uu][Ss][Ee][Rr][Ss][\\/]+[^\\/\s'\"`]+"),
      "~"),
-    (re.compile(r"(?<![^\s'\"`(=\[,:])/(?:Users|home)/[^/\s'\"`]+"), "~"),
+    (re.compile(r"(?<![^\s'\"`(=\[,:])/(?:Users/[^/\s'\"`]+|home/[^/\s'\"`]+(?=/))"), "~"),
     (re.compile(r"[A-Za-z0-9+_=-]{40,}"), _random_like),
 ]
 
@@ -146,8 +149,10 @@ CORRECTION = _correction_pattern()
 ERROR_HEADER = re.compile(r"(?:Exit code\b|Wall time:|Total output lines:|Output:|> |[=\-_*#~]{3,})")
 PATH_TOKEN = re.compile(r"[^\s'\"`]*[\\/][^\s'\"`]*")
 CODEX_EXIT = re.compile(r"^Exit code: (-?\d+)", re.M)
-# Agent bookkeeping, not the user's habit (PLAN D12). Interrupts are counted on their own.
-AGENT_NOISE = ("<tool_use_error>", "[Request interrupted", "[Tool call interrupted")
+# Not failures of the user's work (PLAN D12): agent bookkeeping, interrupted calls (counted on their
+# own), and the user declining a tool call.
+NOT_FAILURES = ("<tool_use_error>", "[Request interrupted", "[Tool call interrupted",
+                "The user doesn't want to proceed")
 
 
 def error_signature(text):
@@ -169,6 +174,13 @@ def error_signature(text):
 
 def codex_error_text(output):
     """Error text if a Codex tool output reports a non-zero exit, else None."""
+    if isinstance(output, list):  # exec tool: items whose text holds the JSON result
+        for item in output:
+            text = item.get("text") if isinstance(item, dict) else None
+            err = codex_error_text(text) if text else None
+            if err is not None:
+                return err
+        return None
     if isinstance(output, str):
         try:
             output = json.loads(output)
@@ -212,7 +224,7 @@ class Session:
                 self.corrections.append(text)
 
     def add_error(self, tool, text):
-        if tool.startswith("mcp__") or str(text).lstrip().startswith(AGENT_NOISE):
+        if tool.startswith("mcp__") or str(text).lstrip().startswith(NOT_FAILURES):
             return
         self.errors[tool] += 1
         sig = error_signature(text)

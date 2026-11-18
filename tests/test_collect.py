@@ -55,6 +55,7 @@ class CollectTest(TempDirCase):
         self.assertEqual(out.count("[claude]"), 60)
         self.assertIn("10 more sessions omitted", out)
         self.assertIn("Problem signals", out)
+        self.assertIn("0 out / 0 in tokens", out)  # per-session input tokens are evidence too
 
     def test_main_removes_last_runs_analysis(self):
         stale = self.dir / collect.ANALYSIS_NAME

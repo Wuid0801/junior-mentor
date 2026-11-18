@@ -9,7 +9,7 @@
 | many correction-like prompts | Put context, constraints and one example into the first request | input/output specification |
 | many interrupts | On bigger tasks, ask for a plan and approve it first | task decomposition, plan mode |
 | `Permission denied` among the repeated errors | Allow only the safe, read-only commands you run often | principle of least privilege |
-| one very long session, huge input tokens | One session per topic; carry over a three-line summary | context window |
+| one session with far more prompts and `in tokens` than the rest (see its session line) | One session per topic; carry over a three-line summary | context window |
 
 These are hints. When the evidence points somewhere else, follow the evidence.
 
