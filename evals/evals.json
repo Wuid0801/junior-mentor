@@ -1,0 +1,48 @@
+{
+  "skill_name": "junior-mentor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "내 AI 코딩 습관 분석해줘",
+      "expected_output": "A Korean HTML report over the last 30 days of Claude Code and Codex sessions: patterns, strengths, up to 3 recurring problems each with evidence, why, fix and a concept, and up to 3 tips.",
+      "expectations": [
+        "The skill runs scripts/collect.py before writing any feedback",
+        "analysis.json has lang \"ko\" and all prose is Korean, concept names written as 한국어(English)",
+        "problems has at most 3 items and each evidence matches numbers or sessions in the digest",
+        "No URLs appear in the analysis",
+        "The report path is delivered and the chat reply is at most two lines"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "코덱스 기록만 최근 14일로 분석해줘",
+      "expected_output": "Same report built from Codex logs only with --agent codex --days 14, in Korean.",
+      "expectations": [
+        "collect.py is run with --agent codex --days 14",
+        "An exec/shell-heavy tool mix is not treated as a problem by itself",
+        "If the digest says NOT ENOUGH DATA, the analysis step is skipped and the report shows stats only"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "review how I use Claude Code",
+      "expected_output": "An English HTML report with the same structure, grounded in the digest.",
+      "expectations": [
+        "The skill runs scripts/collect.py before writing any feedback",
+        "analysis.json has lang \"en\"",
+        "problems has at most 3 items and each evidence matches numbers or sessions in the digest",
+        "Feedback is about how the user works with the agent, not the code they produced"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "analyze my last 7 days of agent sessions",
+      "expected_output": "An English report for both agents over 7 days.",
+      "expectations": [
+        "collect.py is run with --agent both --days 7",
+        "tips has at most 3 items and no URLs",
+        "The analysis is not pasted into chat; only the report path and at most two lines are given"
+      ]
+    }
+  ]
+}
